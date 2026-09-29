@@ -142,10 +142,11 @@ yamlsplice insert [-i] [-d N] [-s] [-after K | -before K | -first] file path key
 | --- | --- |
 | `-i` | Write the result back to the file. Without it the result goes to standard output. |
 | `-d N` | Document index in a multi-document stream (default 0). |
-| `-s` | Treat the value as a string (`8080` becomes `"8080"`). |
+| `-s` | Always treat the value as a string. |
+| `-t` | Always parse the value as YAML, even over an existing string. |
 | `-after K`, `-before K`, `-first` | `insert` only: where the key goes. |
 
-A file of `-` reads standard input. Values are parsed as YAML, so `8080` is an integer, `true` a boolean and `[a, b]` a sequence. Flags go before the file argument.
+A file of `-` reads standard input. Values are parsed as YAML, so `8080` is an integer, `true` a boolean and `[a, b]` a sequence. The exception is `set` over an existing string scalar: the value stays a string and keeps its quote style, so `'1.26'` becomes `'1.27'` and `latest` becomes `"1.20"` (plain `1.20` would be a float). Use `-t` to override. Flags may appear anywhere; put `--` before a value that starts with a dash.
 
 | Exit code | Meaning |
 | --- | --- |

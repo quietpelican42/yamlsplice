@@ -23,7 +23,7 @@ func TestCLI(t *testing.T) {
 		want     string // expected stdout
 		errHas   string
 	}{
-		{"set int", []string{"set", "-", "name", "8080"}, 0, "# top\nname: 8080 # n\n\nports:\n  - 80\nlabels: {a: b}\n", ""},
+		{"set int with -t", []string{"set", "-t", "-", "name", "8080"}, 0, "# top\nname: 8080 # n\n\nports:\n  - 80\nlabels: {a: b}\n", ""},
 		{"set string flag", []string{"set", "-s", "-", "name", "8080"}, 0, "# top\nname: \"8080\" # n\n\nports:\n  - 80\nlabels: {a: b}\n", ""},
 		{"set 1.1 trap is quoted", []string{"set", "-", "name", "yes"}, 0, "# top\nname: \"yes\" # n\n\nports:\n  - 80\nlabels: {a: b}\n", ""},
 		{"delete", []string{"delete", "-", "name"}, 0, "# top\n\nports:\n  - 80\nlabels: {a: b}\n", ""},
@@ -50,6 +50,32 @@ func TestCLI(t *testing.T) {
 				t.Fatalf("stderr %q does not contain %q", errs, tc.errHas)
 			}
 		})
+	}
+}
+
+func TestCLIStringSafety(t *testing.T) {
+	tests := []struct {
+		in, path, val, want string
+		args                []string
+	}{
+		{"v: '1.26'\n", "v", "1.27", "v: '1.27'\n", nil},
+		{"v: \"8080\"\n", "v", "9090", "v: \"9090\"\n", nil},
+		{"v: v1.2\n", "v", "v1.3", "v: v1.3\n", nil},
+		{"v: latest\n", "v", "1.20", "v: \"1.20\"\n", nil},
+		{"v: '1.26'\n", "v", "1.27", "v: 1.27\n", []string{"-t"}},
+		{"v: 1\n", "v", "2", "v: 2\n", nil},
+		{"v: a\n", "v", "yes", "v: \"yes\"\n", []string{"-s"}},
+	}
+	for _, tc := range tests {
+		args := append([]string{"set"}, tc.args...)
+		args = append(args, "-", tc.path, tc.val)
+		if code, out, errs := runCLI(tc.in, args...); code != 0 || out != tc.want {
+			t.Errorf("%q -> %q (code %d %s), want %q", tc.in, out, code, errs, tc.want)
+		}
+	}
+	// flags after the positional arguments
+	if code, out, _ := runCLI("v: a\n", "set", "-", "v", "yes", "-s"); code != 0 || out != "v: \"yes\"\n" {
+		t.Errorf("trailing flag: %d %q", code, out)
 	}
 }
 

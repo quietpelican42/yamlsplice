@@ -3,11 +3,11 @@
 //
 // Usage:
 //
-//	yamlsplice set    [-i] [-d N] [-s] file path value
+//	yamlsplice set    [-i] [-d N] [-s|-t] file path value
 //	yamlsplice delete [-i] [-d N] file path
 //	yamlsplice rename [-i] [-d N] file path newkey
-//	yamlsplice append [-i] [-d N] [-s] file path value
-//	yamlsplice insert [-i] [-d N] [-s] [-after K | -before K | -first] file path key value
+//	yamlsplice append [-i] [-d N] [-s|-t] file path value
+//	yamlsplice insert [-i] [-d N] [-s|-t] [-after K | -before K | -first] file path key value
 //
 // Exit codes: 0 the edit was applied, 1 the edit was refused (path not found,
 // key exists, edit through an alias), 2 usage error, unreadable file, invalid
@@ -31,16 +31,41 @@ func main() {
 }
 
 const usage = `usage:
-  yamlsplice set    [-i] [-d N] [-s] file path value
+  yamlsplice set    [-i] [-d N] [-s|-t] file path value
   yamlsplice delete [-i] [-d N] file path
   yamlsplice rename [-i] [-d N] file path newkey
-  yamlsplice append [-i] [-d N] [-s] file path value
-  yamlsplice insert [-i] [-d N] [-s] [-after K | -before K | -first] file path key value
+  yamlsplice append [-i] [-d N] [-s|-t] file path value
+  yamlsplice insert [-i] [-d N] [-s|-t] [-after K | -before K | -first] file path key value
 
 file "-" reads standard input. Without -i the result goes to standard output.
-Values are read as YAML scalars (8080 is an integer); -s forces a string.
+Values are read as YAML (8080 is an integer), except that set over an existing
+string keeps a string and its quote style ('1.26' -> '1.27'). -s forces a
+string, -t forces YAML parsing. Flags may appear anywhere; use -- before a
+value that starts with a dash.
 Paths look like a.b[2].c, or a JSON Pointer such as /a/b/2/c.
 `
+
+// reorder moves flags before positional arguments so they work anywhere.
+func reorder(args []string) []string {
+	var flags, pos []string
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		switch {
+		case a == "--":
+			pos = append(pos, args[i+1:]...)
+			return append(flags, append([]string{"--"}, pos...)...)
+		case len(a) > 1 && a[0] == '-':
+			flags = append(flags, a)
+			if (a == "-d" || a == "-after" || a == "-before") && i+1 < len(args) {
+				i++
+				flags = append(flags, args[i])
+			}
+		default:
+			pos = append(pos, a)
+		}
+	}
+	return append(flags, append([]string{"--"}, pos...)...)
+}
 
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	if len(args) == 0 {
@@ -52,7 +77,8 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	fs.SetOutput(stderr)
 	inPlace := fs.Bool("i", false, "write the result back to the file")
 	docN := fs.Int("d", 0, "document index in a multi-document stream")
-	asString := fs.Bool("s", false, "treat the value as a string")
+	asString := fs.Bool("s", false, "always treat the value as a string")
+	typed := fs.Bool("t", false, "always parse the value as YAML (8080 is an integer), even over a string")
 	after := fs.String("after", "", "insert: place the key after this sibling")
 	before := fs.String("before", "", "insert: place the key before this sibling")
 	first := fs.Bool("first", false, "insert: place the key first")
@@ -71,7 +97,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		fmt.Fprintf(stderr, "yamlsplice: unknown command %q\n%s", cmd, usage)
 		return 2
 	}
-	if err := fs.Parse(args[1:]); err != nil {
+	if err := fs.Parse(reorder(args[1:])); err != nil {
 		return 2
 	}
 	rest := fs.Args()
@@ -107,7 +133,8 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	}
 	switch cmd {
 	case "set":
-		err = d.Set(rest[1], parseValue(rest[2], *asString))
+		// Safe default: over an existing string, an untyped value stays a string.
+		err = d.Set(rest[1], parseValue(rest[2], *asString || (!*typed && d.IsString(rest[1]))))
 	case "delete":
 		err = d.Delete(rest[1])
 	case "rename":

@@ -650,3 +650,14 @@ func (d *Doc) Append(path string, value any) error {
 	}
 	return d.commit([]splice{{at, at, block + "\n"}}, h)
 }
+
+// IsString reports whether path addresses an existing string scalar (quoted,
+// or plain but resolving to a string).
+func (d *Doc) IsString(path string) bool {
+	segs, err := parsePath(path)
+	if err != nil {
+		return false
+	}
+	r, err := d.idx().resolve(segs)
+	return err == nil && r.n != nil && r.n.y.Kind == yaml.ScalarNode && !r.n.null && r.n.y.ShortTag() == "!!str"
+}
