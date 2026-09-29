@@ -1,0 +1,8 @@
+*.test
+*.out
+coverage.out
+/yamlsplice
+/bin/
+bench/corpus/
+bench/score/score
+testdata/fuzz/*/*.tmp
