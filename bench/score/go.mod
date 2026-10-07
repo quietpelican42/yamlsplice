@@ -2,10 +2,10 @@ module yamlsplice-bench
 
 go 1.26.1
 
-replace github.com/__GH_OWNER__/yamlsplice => ../..
+replace github.com/quietpelican42/yamlsplice => ../..
 
 require (
-	github.com/__GH_OWNER__/yamlsplice v0.0.0
+	github.com/quietpelican42/yamlsplice v0.0.0
 	github.com/braydonk/yaml v0.9.0
 	github.com/goccy/go-yaml v1.19.2
 	github.com/suzuki-shunsuke/go-yamledit v0.0.5

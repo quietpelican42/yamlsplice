@@ -1,4 +1,4 @@
-module github.com/__GH_OWNER__/yamlsplice
+module github.com/quietpelican42/yamlsplice
 
 go 1.24
 

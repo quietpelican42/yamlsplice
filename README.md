@@ -49,8 +49,8 @@ The corpus files are fetched from URLs pinned to a commit with a sha256 each (`b
 ## Installation
 
 ```sh
-go get github.com/__GH_OWNER__/yamlsplice
-go install github.com/__GH_OWNER__/yamlsplice/cmd/yamlsplice@latest
+go get github.com/quietpelican42/yamlsplice
+go install github.com/quietpelican42/yamlsplice/cmd/yamlsplice@latest
 ```
 
 The only dependency is gopkg.in/yaml.v3, used to find where nodes are in the source and to check results (see How it works).

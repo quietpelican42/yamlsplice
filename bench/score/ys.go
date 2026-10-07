@@ -1,6 +1,6 @@
 package main
 
-import ys "github.com/__GH_OWNER__/yamlsplice"
+import ys "github.com/quietpelican42/yamlsplice"
 
 func editYamlsplice(src []byte, e Edit) ([]byte, error) {
 	d, err := ys.Edit(src)

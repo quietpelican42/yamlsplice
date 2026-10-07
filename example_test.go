@@ -3,7 +3,7 @@ package yamlsplice_test
 import (
 	"fmt"
 
-	"github.com/__GH_OWNER__/yamlsplice"
+	"github.com/quietpelican42/yamlsplice"
 )
 
 func Example() {

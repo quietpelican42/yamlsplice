@@ -23,7 +23,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/__GH_OWNER__/yamlsplice"
+	"github.com/quietpelican42/yamlsplice"
 )
 
 func main() {
